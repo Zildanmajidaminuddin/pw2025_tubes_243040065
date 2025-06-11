@@ -37,9 +37,7 @@ include('config/constants.php');
                     <li>
                         <a href="<?php echo SITEURL; ?>foods.php">Foods</a>
                     </li>
-                    <li>
-                        <a href="#">Contact</a>
-                    </li>
+                
                     <li>
                         <?php
                         if (isset($_SESSION['user'])) {
