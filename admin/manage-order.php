@@ -68,7 +68,7 @@
                         
                         ?>
 
-                            <tr>
+                            <tr id="order-row-<?php echo $id; ?>">
                                 <td><?php echo $sn++; ?>. </td>
                                 <td><?php echo $food; ?></td>
                                 <td><?php echo $price; ?></td>
@@ -105,6 +105,9 @@
                                 <td><?php echo $customer_address; ?></td>
                                 <td>
                                     <a href="<?php echo SITEURL; ?>admin/update-order.php?id=<?php echo $id; ?>" class="btn-secondary">Update Order</a>
+                                    <button onclick="printSingleOrderPDF(<?php echo $id; ?>)" class="btn-pdf" style="background-color: #28a745; color: white; padding: 8px 12px; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; margin-left: 5px;">
+                                        <i class="fas fa-file-pdf"></i> PDF
+                                    </button>
                                 </td>
                             </tr>
 
@@ -225,12 +228,124 @@ function printOrdersPDF() {
         doc.setPage(i);
         doc.setFontSize(8);
         doc.setFont('helvetica', 'normal');
-        doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.width - 30, doc.internal.pageSize.height - 10);
+       doc.text('Page ' + (i + 1) + ' of ' + pageCount, doc.internal.pageSize.width - 50, doc.internal.pageSize.height - 10);
+
     }
     
     // Save the PDF
     const fileName = 'Orders_Report_' + new Date().toISOString().split('T')[0] + '.pdf';
     doc.save(fileName);
+}
+
+// NEW FUNCTION: Print single order PDF
+function printSingleOrderPDF(orderId) {
+    try {
+        // Check if jsPDF is loaded
+        if (typeof window.jspdf === 'undefined') {
+            alert('PDF library not loaded. Please refresh the page and try again.');
+            return;
+        }
+        
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF('p', 'mm', 'a4'); // portrait orientation for single order
+        
+        // Find the specific order row
+        const orderRow = document.getElementById('order-row-' + orderId);
+        if (!orderRow) {
+            alert('Order not found!');
+            return;
+        }
+        
+        const cells = orderRow.querySelectorAll('td');
+        if (cells.length < 11) {
+            alert('Order data incomplete!');
+            return;
+        }
+        
+        // Extract order data with null checks
+        const orderData = {
+            sn: cells[0] ? cells[0].textContent.trim() : 'N/A',
+            food: cells[1] ? cells[1].textContent.trim() : 'N/A',
+            price: cells[2] ? cells[2].textContent.trim() : 'N/A',
+            qty: cells[3] ? cells[3].textContent.trim() : 'N/A',
+            total: cells[4] ? cells[4].textContent.trim() : 'N/A',
+            orderDate: cells[5] ? cells[5].textContent.trim() : 'N/A',
+            status: cells[6] ? cells[6].textContent.trim() : 'N/A',
+            customerName: cells[7] ? cells[7].textContent.trim() : 'N/A',
+            contact: cells[8] ? cells[8].textContent.trim() : 'N/A',
+            email: cells[9] ? cells[9].textContent.trim() : 'N/A',
+            address: cells[10] ? cells[10].textContent.trim() : 'N/A'
+        };
+        
+        // Add header
+        doc.setFontSize(20);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Order Receipt', 105, 20, null, null, 'center');
+        
+        // Add date
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        const currentDate = new Date().toLocaleDateString();
+        doc.text('Generated on: ' + currentDate, 14, 30);
+        
+        // Add order ID
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Order ID: #' + orderId, 14, 40);
+        
+        // Add a simple line instead of autoTable for better compatibility
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text('ORDER DETAILS:', 14, 60);
+        
+        doc.setFont('helvetica', 'normal');
+        let yPos = 70;
+        const lineHeight = 8;
+        
+        doc.text('Food Item: ' + orderData.food, 14, yPos);
+        yPos += lineHeight;
+        doc.text('Price: ' + orderData.price, 14, yPos);
+        yPos += lineHeight;
+        doc.text('Quantity: ' + orderData.qty, 14, yPos);
+        yPos += lineHeight;
+        doc.text('Total Amount: ' + orderData.total, 14, yPos);
+        yPos += lineHeight;
+        doc.text('Order Date: ' + orderData.orderDate, 14, yPos);
+        yPos += lineHeight;
+        doc.text('Status: ' + orderData.status, 14, yPos);
+        yPos += lineHeight * 2;
+        
+        // Add customer information
+        doc.setFont('helvetica', 'bold');
+        doc.text('CUSTOMER INFORMATION:', 14, yPos);
+        yPos += lineHeight;
+        
+        doc.setFont('helvetica', 'normal');  
+        doc.text('Customer Name: ' + orderData.customerName, 14, yPos);
+        yPos += lineHeight;
+        doc.text('Contact Number: ' + orderData.contact, 14, yPos);
+        yPos += lineHeight;
+        doc.text('Email Address: ' + orderData.email, 14, yPos);
+        yPos += lineHeight;
+        doc.text('Delivery Address: ' + orderData.address, 14, yPos);
+        
+        // Add footer
+        const pageHeight = doc.internal.pageSize.height;
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'italic');
+        doc.text('Thank you for your order!', 105, pageHeight - 20, null, null, 'center');
+        doc.text('Page 1 of 1', 105, pageHeight - 10, null, null, 'center');
+        
+        // Save the PDF with a simple filename
+        const fileName = 'Order_' + orderId + '.pdf';
+        doc.save(fileName);
+        
+        console.log('PDF generated successfully for Order ID: ' + orderId);
+        
+    } catch (error) {
+        console.error('Error generating PDF:', error);
+        alert('Error generating PDF: ' + error.message);
+    }
 }
 </script>
 
@@ -249,6 +364,22 @@ function printOrdersPDF() {
 
 .btn-primary i {
     margin-right: 8px;
+}
+
+/* Styling for individual PDF buttons */
+.btn-pdf:hover {
+    background-color: #218838 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: all 0.3s ease;
+}
+
+.btn-pdf {
+    transition: all 0.3s ease;
+}
+
+.btn-pdf i {
+    margin-right: 4px;
 }
 </style>
 

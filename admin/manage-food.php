@@ -56,8 +56,20 @@
                     </tr>
 
                     <?php 
-                        //Create a SQL Query to Get all the Food
-                        $sql = "SELECT * FROM tbl_food";
+                        // Pagination setup
+                        $limit = 4; // Number of records per page
+                        $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+                        $offset = ($page - 1) * $limit;
+
+                        // Get total number of records
+                        $count_sql = "SELECT COUNT(*) as total FROM tbl_food";
+                        $count_res = mysqli_query($conn, $count_sql);
+                        $count_row = mysqli_fetch_assoc($count_res);
+                        $total_records = $count_row['total'];
+                        $total_pages = ceil($total_records / $limit);
+
+                        //Create a SQL Query to Get food with pagination
+                        $sql = "SELECT * FROM tbl_food LIMIT $limit OFFSET $offset";
 
                         //Execute the qUery
                         $res = mysqli_query($conn, $sql);
@@ -65,8 +77,8 @@
                         //Count Rows to check whether we have foods or not
                         $count = mysqli_num_rows($res);
 
-                        //Create Serial Number VAriable and Set Default VAlue as 1
-                        $sn=1;
+                        //Create Serial Number VAriable and Set Default VAlue based on page
+                        $sn = $offset + 1;
 
                         if($count>0)
                         {
@@ -125,6 +137,28 @@
 
                     
                 </table>
+
+                <!-- Pagination Links -->
+                <?php if($total_pages > 1): ?>
+                <div class="pagination" style="text-align: center; margin-top: 20px;">
+                    <?php if($page > 1): ?>
+                        <a href="?page=<?php echo $page-1; ?>" class="btn-secondary" style="margin: 0 5px;">Previous</a>
+                    <?php endif; ?>
+                    
+                    <?php for($i = 1; $i <= $total_pages; $i++): ?>
+                        <?php if($i == $page): ?>
+                            <span class="btn-primary" style="margin: 0 5px; padding: 8px 12px; background-color: #ff6b35; color: white; text-decoration: none; border-radius: 4px;"><?php echo $i; ?></span>
+                        <?php else: ?>
+                            <a href="?page=<?php echo $i; ?>" class="btn-secondary" style="margin: 0 5px;"><?php echo $i; ?></a>
+                        <?php endif; ?>
+                    <?php endfor; ?>
+                    
+                    <?php if($page < $total_pages): ?>
+                        <a href="?page=<?php echo $page+1; ?>" class="btn-secondary" style="margin: 0 5px;">Next</a>
+                    <?php endif; ?>
+                </div>
+                <?php endif; ?>
+
     </div>
     
 </div>

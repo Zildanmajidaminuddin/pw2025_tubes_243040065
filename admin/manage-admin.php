@@ -1,6 +1,5 @@
 <?php include('partials/menu.php'); ?>
 
-
         <!-- Main Content Section Starts -->
         <div class="main-content">
             <div class="wrapper">
@@ -53,6 +52,19 @@
 
                 <br /><br /><br />
 
+                <?php
+                    // Pagination setup
+                    $records_per_page = 4; // Jumlah admin per halaman
+                    $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+                    $offset = ($current_page - 1) * $records_per_page;
+
+                    // Query untuk menghitung total records
+                    $count_sql = "SELECT COUNT(*) as total FROM tbl_admin";
+                    $count_res = mysqli_query($conn, $count_sql);
+                    $total_records = mysqli_fetch_assoc($count_res)['total'];
+                    $total_pages = ceil($total_records / $records_per_page);
+                ?>
+
                 <table class="tbl-full">
                     <tr>
                         <th>S.N.</th>
@@ -63,8 +75,8 @@
 
                     
                     <?php 
-                        //Query to Get all Admin
-                        $sql = "SELECT * FROM tbl_admin";
+                        //Query to Get admin with pagination
+                        $sql = "SELECT * FROM tbl_admin LIMIT $records_per_page OFFSET $offset";
                         //Execute the Query
                         $res = mysqli_query($conn, $sql);
 
@@ -74,7 +86,7 @@
                             // Count Rows to CHeck whether we have data in database or not
                             $count = mysqli_num_rows($res); // Function to get all the rows in database
 
-                            $sn=1; //Create a Variable and Assign the value
+                            $sn = ($current_page - 1) * $records_per_page + 1; //Create a Variable and Assign the value
 
                             //CHeck the num of rows
                             if($count>0)
@@ -111,14 +123,52 @@
                             else
                             {
                                 //We Do not Have Data in Database
+                                ?>
+                                <tr>
+                                    <td colspan="4">No admin found.</td>
+                                </tr>
+                                <?php
                             }
                         }
 
                     ?>
 
-
-                    
                 </table>
+
+                <!-- Pagination Links -->
+                <?php if($total_pages > 1): ?>
+                <div class="pagination" style="margin-top: 20px; text-align: center;">
+                    <?php if($current_page > 1): ?>
+                        <a href="?page=1" class="btn-secondary">First</a>
+                        <a href="?page=<?php echo $current_page - 1; ?>" class="btn-secondary">Previous</a>
+                    <?php endif; ?>
+
+                    <?php
+                    // Tampilkan nomor halaman
+                    $start_page = max(1, $current_page - 2);
+                    $end_page = min($total_pages, $current_page + 2);
+                    
+                    for($i = $start_page; $i <= $end_page; $i++):
+                    ?>
+                        <?php if($i == $current_page): ?>
+                            <span class="current-page" style="padding: 8px 12px; background-color: #007cba; color: white; margin: 0 2px; border-radius: 3px;"><?php echo $i; ?></span>
+                        <?php else: ?>
+                            <a href="?page=<?php echo $i; ?>" class="btn-secondary" style="margin: 0 2px;"><?php echo $i; ?></a>
+                        <?php endif; ?>
+                    <?php endfor; ?>
+
+                    <?php if($current_page < $total_pages): ?>
+                        <a href="?page=<?php echo $current_page + 1; ?>" class="btn-secondary">Next</a>
+                        <a href="?page=<?php echo $total_pages; ?>" class="btn-secondary">Last</a>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Info pagination -->
+                 <br>
+                <div style="margin-top: 10px; text-align: center; color: #666;">
+                    Showing <?php echo ($offset + 1); ?> to <?php echo min($offset + $records_per_page, $total_records); ?> of <?php echo $total_records; ?> entries
+                </div>
+                <?php endif; ?>
 
             </div>
         </div>
